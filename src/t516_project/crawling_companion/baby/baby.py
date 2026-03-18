@@ -19,17 +19,17 @@ class BabySocialRobot(Node):
         self.RUN_AWAY_SPEED = 0.15
         self.TURN_SPEED = 0.8
         self.WANDER_TURN_SPEED = 0.3
-        self.DIST_K = 320.0            
+        self.DIST_K = 360.0            
 
         # --- 📏 距离阈值定义 ---
         # 社交距离
-        self.RUN_AWAY_DIST = 1.5       
-        self.INTERACT_DIST = 2.5       
+        self.RUN_AWAY_DIST = 2.0       
+        self.INTERACT_DIST = 3.0       
         self.APPROACH_MAX = 10.0       
         # 漫游避障距离
-        self.WANDER_CRITICAL_DIST = 0.5 # 漫游全方位预警
+        self.WANDER_CRITICAL_DIST = 0.3 # 漫游全方位预警
         self.WANDER_PATH_DIST = 0.8     # 漫游前方预警
-        self.HARD_STOP_DIST = 0.25      # 绝对刹车底线
+        self.HARD_STOP_DIST = 0.2      # 绝对刹车底线
 
         # --- 🧠 状态与记忆变量 ---
         self.state = "WANDER"           # 默认状态改为漫游 (WANDER)
@@ -77,7 +77,7 @@ class BabySocialRobot(Node):
 
     def scan_cb(self, msg):
         # 1. 360度全方位雷达数据
-        all_ranges = [r for r in msg.ranges if 0.05 < r < 3.5]
+        all_ranges = [r for r in msg.ranges if 0.1 < r < 3.5]
         if all_ranges:
             self.min_dist_all = min(all_ranges)
             self.critical_collision = self.min_dist_all < self.HARD_STOP_DIST
@@ -88,7 +88,7 @@ class BabySocialRobot(Node):
             self.wander_collision_risk = False
 
         # 2. 逻辑前方雷达数据 (物理后方 140-220度)
-        front_ranges = [r for r in msg.ranges[140:220] if 0.05 < r < 3.5]
+        front_ranges = [r for r in msg.ranges[140:220] if 0.1 < r < 3.5]
         self.wander_path_blocked = bool(front_ranges and min(front_ranges) < self.WANDER_PATH_DIST)
     
     def img_cb(self, data):
@@ -149,7 +149,7 @@ class BabySocialRobot(Node):
             traj.joint_names = ['gix']
             p1, p2 = JointTrajectoryPoint(), JointTrajectoryPoint()
             p1.positions, p1.time_from_start.nanosec = [math.radians(25)], 400000000
-            p2.positions, p2.time_from_start.nanosec = [math.radians(-25)], 800000000
+            p2.positions, p2.time_from_start.nanosec = [math.radians(-15)], 800000000
             traj.points = [p1, p2]
             self.arm_pub.publish(traj)
             self.last_wave_time = now
@@ -216,7 +216,7 @@ class BabySocialRobot(Node):
             if self.wander_collision_risk or self.wander_path_blocked:
                 twist.linear.x = 0.0
                 twist.angular.z = 0.0
-                self.send_light("YELLOW" if self.wander_path_blocked else "BLUE")
+                self.send_light("RED" if self.wander_path_blocked else "BLUE")
                 
             # 正常漫游：直走
             elif not self.is_wander_turning:
