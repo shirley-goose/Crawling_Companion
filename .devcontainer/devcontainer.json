@@ -1,0 +1,28 @@
+{
+    "name": "Crawling Companion Brain",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    
+    "runArgs": [
+        "--network=host",
+        "--privileged",
+        "--ipc=host",
+        "--device=/dev/spidev0.0:/dev/spidev0.0"
+    ],
+
+    "workspaceMount": "source=${localWorkspaceFolder},target=/root/robot3_ws,type=bind",
+    "workspaceFolder": "/root/robot3_ws",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-iot.vscode-ros",
+                "ms-python.python",
+                "ms-vscode.cpptools"
+            ]
+        }
+    },
+
+    "remoteUser": "root"
+}
