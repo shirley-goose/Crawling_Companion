@@ -13,7 +13,7 @@ class BabySocialRobot(Node):
         super().__init__('baby_social_robot')
         base_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # --- 🔧 速度与距离核心配置 ---
+        # --- 🔧 Core Speed & Distance Config ---
         self.target_ip = "10.155.234.247" 
         self.LINEAR_SPEED = 0.05
         self.RUN_AWAY_SPEED = 0.15
@@ -21,24 +21,24 @@ class BabySocialRobot(Node):
         self.WANDER_TURN_SPEED = 0.3
         self.DIST_K = 360.0            
 
-        # --- 📏 距离阈值定义 ---
-        # 社交距离
+        # --- 📏 Distance Threshold Definitions ---
+        # Social distances
         self.RUN_AWAY_DIST = 2.0       
         self.INTERACT_DIST = 3.0       
         self.APPROACH_MAX = 10.0       
-        # 漫游避障距离
-        self.WANDER_CRITICAL_DIST = 0.3 # 漫游全方位预警
-        self.WANDER_PATH_DIST = 0.8     # 漫游前方预警
-        self.HARD_STOP_DIST = 0.2      # 绝对刹车底线
+        # Wandering obstacle avoidance distances
+        self.WANDER_CRITICAL_DIST = 0.3 # Wandering omnidirectional warning
+        self.WANDER_PATH_DIST = 0.8     # Wandering front warning
+        self.HARD_STOP_DIST = 0.2      # Absolute hard stop baseline
 
-        # --- 🧠 状态与记忆变量 ---
-        self.state = "WANDER"           # 默认状态改为漫游 (WANDER)
+        # --- 🧠 State & Memory Variables ---
+        self.state = "WANDER"           # Default state set to WANDER
         self.detected_dist = 0.0
         self.last_seen_time = 0.0      
         self.MEM_DURATION = 5.0       
         self.is_person_present = False
         
-        # 动作计时器
+        # Action timers
         self.last_wave_time = 0.0
         self.run_away_start_time = 0.0
         self.wander_start_time = time.time()
@@ -46,7 +46,7 @@ class BabySocialRobot(Node):
         self.WANDER_TIME = 5.0
         self.WANDER_TURN_TIME = 2.0
 
-        # 雷达状态
+        # Lidar states
         self.critical_collision = False
         self.wander_collision_risk = False
         self.wander_path_blocked = False
@@ -55,16 +55,16 @@ class BabySocialRobot(Node):
         self.left_dist = 999.0
         self.right_dist = 999.0
         
-        # --- 📸 调试配置 ---
+        # --- 📸 Debug Configuration ---
         self.save_dir = os.path.join(base_dir, "debug_photos")
         self.last_photo_time = 0.0
-        self.photo_interval = 5.0  # 👈 更改为每 5 秒保存一次
+        self.photo_interval = 5.0  # 👈 Changed to save every 5 seconds
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
 
-        # 初始化工具与通讯
+        # Initialize tools & communication
         self.bridge = CvBridge()
-        self.get_logger().info("正在初始化 YOLOv8 模型...")
+        self.get_logger().info("Initializing YOLOv8 model...")
         model_path = os.path.join(base_dir, "yolov8n.pt")
         self.model = YOLO(model_path)
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -76,21 +76,21 @@ class BabySocialRobot(Node):
         self.img_sub = self.create_subscription(CompressedImage, '/image_raw/compressed', self.img_cb, qos_profile_sensor_data)
         
         self.timer = self.create_timer(0.1, self.control_loop)
-        self.get_logger().info("✅ 终极全功能版：漫游 + 避障 + 视觉社交 已启动！")
+        self.get_logger().info("✅ Ultimate Full-Featured Version: Wander + Avoidance + Visual Social Started!")
    
     def scan_cb(self, msg):
         # ==============================
-        # 1️⃣ 360° 全局安全检测
+        # 1️⃣ 360° Global Safety Check
         # ==============================
         all_ranges = [r for r in msg.ranges if 0.1 < r < 3.5]
 
         if all_ranges:
             self.min_dist_all = min(all_ranges)
 
-            # 🚨 硬刹车（最高优先级）
+            # 🚨 Hard stop (Highest priority)
             self.critical_collision = self.min_dist_all < self.HARD_STOP_DIST
 
-            # ⚠️ 漫游风险（全方向）
+            # ⚠️ Wandering risk (Omnidirectional)
             self.wander_collision_risk = self.min_dist_all < self.WANDER_CRITICAL_DIST
         else:
             self.min_dist_all = 999.0
@@ -98,7 +98,7 @@ class BabySocialRobot(Node):
             self.wander_collision_risk = False
 
         # ==============================
-        # 2️⃣ 前方检测（决定“能不能直走”）
+        # 2️⃣ Front Check (Decides if it can go straight)
         # ==============================
         front_ranges = [r for r in msg.ranges[140:220] if 0.1 < r < 3.5]
 
@@ -110,7 +110,7 @@ class BabySocialRobot(Node):
             self.wander_path_blocked = False
 
         # ==============================
-        # 3️⃣ 左侧检测（用于绕路决策）
+        # 3️⃣ Left Check (For detour decision)
         # ==============================
         left_ranges = [r for r in msg.ranges[60:120] if 0.1 < r < 3.5]
 
@@ -120,7 +120,7 @@ class BabySocialRobot(Node):
             self.left_dist = 999.0
 
         # ==============================
-        # 4️⃣ 右侧检测（用于绕路决策）
+        # 4️⃣ Right Check (For detour decision)
         # ==============================
         right_ranges = [r for r in msg.ranges[240:300] if 0.1 < r < 3.5]
 
@@ -148,30 +148,30 @@ class BabySocialRobot(Node):
                         
                         aspect_ratio = w / h
                         
-                        # --- 🎯 严格的宝宝过滤逻辑 ---
+                        # --- 🎯 Strict Baby Filtering Logic ---
                         if aspect_ratio >= 0.92: 
                             self.detected_dist = self.DIST_K / h
                             self.last_seen_time = current_time
                             found = True
                             
-                            # 记录检测细节
+                            # Record detection details
                             cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
                             label = f"BABY: {self.detected_dist:.2f}m (AR:{aspect_ratio:.2f})"
                             cv2.putText(annotated_frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                         else:
-                            # 丢弃非目标对象
+                            # Discard non-target objects
                             cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 1)
                             label_drop = f"Drop (AR:{aspect_ratio:.2f})"
                             cv2.putText(annotated_frame, label_drop, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
 
             self.is_person_present = found
 
-            # --- 📸 照片保存逻辑 (每 5 秒) ---
+            # --- 📸 Photo Saving Logic (Every 5 seconds) ---
             if found and (current_time - self.last_photo_time > self.photo_interval):
                 timestamp = time.strftime("%H%M%S")
                 filename = f"{self.save_dir}/detect_{timestamp}.jpg"
                 cv2.imwrite(filename, annotated_frame)
-                self.get_logger().info(f"📸 [视觉快门] 成功锁定目标！照片已保存至: {filename}")
+                self.get_logger().info(f"📸 [Visual Shutter] Target locked! Photo saved to: {filename}")
                 self.last_photo_time = current_time
 
         except Exception as e:
@@ -197,18 +197,18 @@ class BabySocialRobot(Node):
         twist = Twist()
         now = time.time()
         
-        # 1. 优先级最高：硬刹车底线
+        # 1. Highest Priority: Hard Stop Baseline
         if self.critical_collision:
             self.cmd_pub.publish(Twist())
             if int(now * 10) % 10 == 0:
-                self.get_logger().warn(f"🚨 绝对安全距离触发！障碍物距离: {self.min_dist_all:.2f}m")
+                self.get_logger().warn(f"🚨 Absolute Safe Distance Triggered! Obstacle distance: {self.min_dist_all:.2f}m")
             return
 
-        # 2. 核心状态机判断
+        # 2. Core State Machine Judgment
         logic_present = self.is_person_present or (now - self.last_seen_time < self.MEM_DURATION)
 
         if logic_present:
-            # 看到宝宝：进入社交逻辑
+            # Sees baby: Enter social logic
             if self.detected_dist < self.RUN_AWAY_DIST:
                 if self.state != "RUN_AWAY":
                     self.state = "RUN_AWAY"
@@ -218,19 +218,19 @@ class BabySocialRobot(Node):
             elif self.detected_dist < self.APPROACH_MAX:
                 if self.state not in ["RUN_AWAY", "INTERACT"]: self.state = "APPROACH"
         else:
-            # 没看到宝宝：切换回漫游逻辑
+            # Does not see baby: Switch back to wandering logic
             if self.state != "RUN_AWAY":
                 if self.state != "WANDER":
                     self.state = "WANDER"
-                    self.wander_start_time = now # 重置漫游循环
+                    self.wander_start_time = now # Reset wander loop
                     self.is_wander_turning = False
 
-        # --- 📝 日志输出模块 ---
+        # --- 📝 Log Output Module ---
         if int(now * 10) % 10 == 0:
 
             baby_info = f"{self.detected_dist:.2f}m" if logic_present else "None"
 
-            # 判断当前“子行为”
+            # Determine current 'sub-behavior'
             sub_state = "IDLE"
 
             if self.state == "WANDER":
@@ -263,7 +263,7 @@ class BabySocialRobot(Node):
 
             self.get_logger().info(log_msg)
 
-        # 3. 执行状态动作
+        # 3. Execute State Actions
         if self.state == "RUN_AWAY":
             if now - self.run_away_start_time < 5.0:
                 self.send_light("BLUE")
@@ -283,7 +283,7 @@ class BabySocialRobot(Node):
         elif self.state == "WANDER":
             wander_elapsed = now - self.wander_start_time
             
-            # 漫游时遇到障碍物：停下并亮警告灯
+            # Encountered obstacle while wandering: Stop and show warning light
             if self.wander_collision_risk or self.wander_path_blocked:
 
                 if self.min_dist_all < 0.25:
@@ -297,9 +297,9 @@ class BabySocialRobot(Node):
                     self.send_light("PURPLE")
 
                 self.cmd_pub.publish(twist)
-                return   # 🚨🚨🚨 关键！！
+                return   # 🚨🚨🚨 CRITICAL!!
                             
-            # 正常漫游：直走
+            # Normal Wandering: Go straight
             elif not self.is_wander_turning:
                 if wander_elapsed < self.WANDER_TIME:
                     twist.linear.x = -self.LINEAR_SPEED
@@ -308,7 +308,7 @@ class BabySocialRobot(Node):
                     self.is_wander_turning = True
                     self.wander_start_time = now
                     
-            # 正常漫游：转弯
+            # Normal Wandering: Turn
             else:
                 if wander_elapsed < self.WANDER_TURN_TIME:
                     twist.angular.z = self.WANDER_TURN_SPEED
