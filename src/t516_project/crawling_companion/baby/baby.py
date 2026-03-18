@@ -14,7 +14,7 @@ class BabySocialRobot(Node):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         
         # --- 🔧 Core Speed & Distance Config ---
-        self.target_ip = "10.155.234.247" 
+        self.target_ip = "10.155.234.247" #our turtlebot ip
         self.LINEAR_SPEED = 0.05
         self.RUN_AWAY_SPEED = 0.15
         self.TURN_SPEED = 0.8

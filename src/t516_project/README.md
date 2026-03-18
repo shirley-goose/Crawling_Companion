@@ -1,66 +1,106 @@
-# UW GIX MSTI TECHIN 516 Winter 2025 Example Final Project
+# 🤖 Crawling Companion: Baby Social Robot
 
-![project example](/assets/final_project_example.jpg)
+*(Note: Replace `your_photo_name.jpg` with your actual image file name in the asset folder)*
 
-## Description
+## 📖 Description
 
-This year, UW GIX MSTI robotics students will designing and developing their own robots!  
-Together in teams of {team size}, they will modify Turtlebot 3 robots for new applications.  
-They will add 1 new sensor, and 1 new motor to accomplish a task of their choosing.  
-This project aims to provide experience developing novel and complete robot systems spanning hardware, software, design, controls, and user interaction.
+The **Baby Social Robot** is an interactive, autonomous companion built on the TurtleBot3 platform, designed to interact with a crawling baby. It combines 2D Lidar-based navigation with YOLOv8-powered computer vision to create a dynamic social state machine.
 
-This example demonstrates a Turtlebot 3 Burger with an added camera and dog treat dispensing motor.  
-When the camera sees a dog, the added motor dispenses a treat.  
+The robot autonomously patrols the room while actively avoiding obstacles like furniture and walls. Once it visually detects the baby, it switches from "Wander Mode" to "Social Mode," adjusting its distance and behavior based on how close the baby is. It uses an expressive LED strip and a waving mechanical arm to communicate its current "mood" and intent.
 
+**Core Behaviors:**
 
-## Video Demo
+  * 🟢 **Green (Wandering):** Patrols the area looking for the baby.
+  * 🔴 **Red / 🟣 Purple (Obstacle Avoidance):** Intelligently turns away from walls or spins out of dead ends.
+  * 🟡 **Yellow (Approaching):** Spots the baby from afar and moves closer while waving.
+  * 🌈 **Rainbow (Interacting):** Reaches the perfect social distance (1.5m - 3.0m), waves, and spins joyfully.
+  * 🔵 **Blue (Escaping):** Backs away to give the baby personal space if they get too close (\< 1.5m).
 
-[![video demo](https://img.youtube.com/vi/KoSGbtOjZQA/0.jpg)](https://youtu.be/KoSGbtOjZQA)
+## 🎥 Video Demo
 
+[Click here to watch the Video Demo](https://www.google.com/search?q=%23) *(Link coming soon)*
 
-## Installation
+-----
 
-### OpenCR
+## ⚙️ Setup Instructions
 
-This project requires cutom firmware for the OpenCR board to drive the 3rd motor.  
-Follow the instructions from [this repo](https://github.com/GIXLabs/t516_OpenCR) to install the new firmware.  
+### Hardware Requirements
 
+  * **Base:** TurtleBot3 (with OpenCR board)
+  * **Compute:** Raspberry Pi (Host) running a ROS 2 Docker Container
+  * **Sensors:** 360° Lidar, USB Web Camera
+  * **Actuators:** Dual wheel motors, 1x Dynamixel motor (for waving arm)
+  * **Feedback:** Neopixel LED Strip (Connected to GPIO D18)
 
-### Turtlebot 3 Raspberry Pi
+### Prerequisites
 
-Clone this repo into the Pis ros2 workspace's `src` directory and build:
-```bash
-cd ~/ros2_ws/src
-git clone https://github.com/GIXLabs/t516_project_example.git
-cd ..
-colcon build
-```
+1.  Ensure your Raspberry Pi and your development machine are on the same local network.
+2.  The YOLOv8 model (`yolov8n.pt`) must be placed in the same directory as the main execution script.
+3.  The LED background service (`host_led_service.py`) must be configured on the Raspberry Pi host machine.
 
-After attaching the new motor, flashing the OpenCR, and building the Turtlebot's new workspace, you can test the new motor with the command below:  
-Note that positions are in radians.  
-**Keep clear of the motor when it moves!**  
-```bash
-ros2 topic pub --once /gix_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory \
-"{joint_names: ['gix'], points: [{positions: [1.0], time_from_start: {sec: 2}}]}"
-```
+-----
 
+## 🚀 Usage Instructions
 
-### Laptop
+To bring the robot to life, you will need to open two terminal windows and SSH into the robot.
 
-For the above demo, object recognition was performed on my laptop with [this yolo ros package](https://github.com/mgonzs13/yolo_ros).  
-Follow their installation instructions to replicate this demo.  
+### Step 1: Launch the Hardware (Terminal 1)
 
-
-## Usage
-
-### Raspberry Pi
+SSH into the physical Raspberry Pi host. This step starts the Lidar, Camera, and Motor controllers.
 
 ```bash
-ros2 launch yolo2motor yolo2motor.launch.py
+# SSH into the robot
+ssh robot-3@<your_robot_ip>
+
+# Launch the hardware bringup
+ros2 launch turtlebot3_gix_bringup hardware.launch.py
 ```
 
-### Laptop
+*(Leave this terminal running in the background)*
+
+### Step 2： LED Setup Instructions
+
+The NeoPixel LED strip are controlled directly by the Raspberry Pi host machine.
+
+We have provided a background service setup in the `resource` folder. Please execute the following commands on the **physical Raspberry Pi host**:
+
+1. **Install the required Python library on the host:**
+   ```bash
+   sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
+   ```
+
+2. **Copy the service file to the systemd directory:**
+   ```
+   
+   ```
+
+3. **Reload systemd, enable, and start the service:**
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable robot_led.service
+   sudo systemctl start robot_led.service
+   ```
+
+4. **Verify the service is running:**
+   ```bash
+   sudo systemctl status robot_led.service
+   ```
+   *(You should see "Active: active (running)" in green).*
+```
+
+这样写的话，其他开发者拿到你的代码后，只需要按照 README 里的这 4 步走，就能完美点亮他们机器人的物理指示灯，并且配合你写的完美的 Docker 大脑代码一起运行了！
+
+**需要我帮你把这些补充内容，和上一条完整的 README 拼成一个最终的合并版本吗？**
+
+### Step 3: Run the Brain inside the Docker Container
+
+Still in Terminal 2, enter your ROS 2 Docker container and execute the main Python script.
 
 ```bash
-ros2 launch yolo_bringup yolo.launch.py
+# Assuming you are already attached to or have entered your docker container:
+python3 /root/robot3_ws/src/t516_project/crawling_companion/baby/baby.py
 ```
+
+### 🎉 You're all set\!
+
+The terminal will display `✅ Ultimate Full-Featured Version: Wander + Avoidance + Visual Social Started!` and the robot will immediately light up green and begin exploring the room. Check the terminal output for real-time logs of the robot's state and distance calculations. Debug photos of the baby detection will be automatically saved to the `debug_photos` directory every 5 seconds.
