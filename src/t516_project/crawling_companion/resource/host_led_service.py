@@ -55,10 +55,14 @@ try:
         data, addr = sock.recvfrom(1024)
         try:
             msg = data.decode().strip()
-            play_effect(msg)  # <--- This line is required for the colors to actually change!
-        except Exception as e:
-            print(f"Decode error: {e}")
+            play_effect(msg)  
+        except Exception as decode_err:
+            print(f"Decode error: {decode_err}")
 except KeyboardInterrupt:
-    print("Exiting service")
+    print("\nProgram stopped by user")
+except Exception as e:
+    print(f"❌ Runtime error: {e}")
+finally:
     pixels.fill((0, 0, 0))
     pixels.show()
+    sock.close()
