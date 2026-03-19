@@ -21,7 +21,7 @@ Feel free to walk around Pikabu and see its changes!
 
 ## 🎥 Video Demo
 
-(https://youtube.com/shorts/0-G2_wm7jlk?si=foUjVEDs8F5l11_5)
+[![Pikabu Robot Demo](https://img.youtube.com/vi/0-G2_wm7jlk/maxresdefault.jpg)](https://www.youtube.com/shorts/0-G2_wm7jlk)
 
 
 ## ⚙️ Setup Instructions
