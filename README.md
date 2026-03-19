@@ -96,12 +96,11 @@ We have provided a background service setup in the `resource` folder. Please exe
    sudo systemctl status robot_led.service
    ```
    *(You should see "Active: active (running)" in green).*
-```
 
 
 ### Step 3: Run the Brain inside the Docker Container
 
-Still in Terminal 2, enter your ROS 2 Docker container and execute the main Python script.
+Enter your ROS 2 Docker container and execute the main Python script.
 
 ```bash
 # Assuming you are already attached to or have entered your docker container:
